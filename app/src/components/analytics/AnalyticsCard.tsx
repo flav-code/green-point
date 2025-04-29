@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { BarChart3, Activity } from 'lucide-react';
 import { User } from '../../types';
 import CardContainer from '../layout/CardContainer';
@@ -38,30 +38,17 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ user: initialUser }) => {
     datasets: []
   });
 
-  // Set up an interval to refresh user data
-  useEffect(() => {
-    // Initial update
-    updateUserAndChartData();
-
-    // Set up polling for updates
-    const intervalId = setInterval(() => {
-      updateUserAndChartData();
-    }, 2000); // Check for updates every 2 seconds
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // Update both user and chart data
-  const updateUserAndChartData = () => {
+  // Create a more robust function to get updated user data
+  const getUpdatedUserData = useCallback(() => {
     const updatedUser = getUser();
     if (updatedUser) {
-      setUser(updatedUser);
-      updateChartData(updatedUser);
+      return updatedUser;
     }
-  };
+    return null;
+  }, []);
 
   // Update chart data based on user stats
-  const updateChartData = (userData: User) => {
+  const updateChartData = useCallback((userData: User) => {
     // Prepare daily data for the last 7 days
     const dates = [];
     const promptCounts = [];
@@ -100,10 +87,52 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ user: initialUser }) => {
         }
       ]
     });
-  };
+  }, []);
+
+  // Update both user and chart data
+  const updateUserAndChartData = useCallback(() => {
+    const updatedUser = getUpdatedUserData();
+    if (updatedUser) {
+      // Only update if the data has actually changed
+      if (JSON.stringify(updatedUser.stats) !== JSON.stringify(user.stats)) {
+        console.log("Analytics: Updating user data and chart");
+        setUser(updatedUser);
+        updateChartData(updatedUser);
+      }
+    }
+  }, [user, getUpdatedUserData, updateChartData]);
+
+  // Set up an interval to refresh user data
+  useEffect(() => {
+    // Initial update
+    updateUserAndChartData();
+
+    // Set up polling for updates
+    const intervalId = setInterval(() => {
+      updateUserAndChartData();
+    }, 2000); // Check for updates every 2 seconds
+
+    return () => clearInterval(intervalId);
+  }, [updateUserAndChartData]);
+
+  // Add event listener for custom events
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      console.log("Analytics: User update event received");
+      updateUserAndChartData();
+    };
+
+    // Listen for a custom event that will be dispatched when user data changes
+    window.addEventListener('user-data-updated', handleUserUpdate);
+
+    return () => {
+      window.removeEventListener('user-data-updated', handleUserUpdate);
+    };
+  }, [updateUserAndChartData]);
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     interaction: {
       mode: 'index' as const,
       intersect: false,
@@ -190,8 +219,8 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ user: initialUser }) => {
             <Activity className="w-4 h-4 text-secondary-400 mr-2" />
             <h3 className="text-sm font-medium">Weekly Activity</h3>
           </div>
-          <div className="bg-background-darker p-3 rounded-md">
-            <Line options={chartOptions} data={chartData} height={180} />
+          <div className="bg-background-darker p-3 rounded-md" style={{ height: "180px" }}>
+            <Line options={chartOptions} data={chartData} />
           </div>
         </div>
       </CardContainer>
