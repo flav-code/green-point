@@ -1,0 +1,13 @@
+(async () => {
+    const response = await fetch("http://ollama:11434/api/generate", {
+        method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        model: "mistral",
+        prompt: `You are a translation assistant. Translate the given text into ${targetLanguage}. Only return the translated text, without explanations.: """${text}"""`,
+        stream: false,
+    })
+})
+) ()

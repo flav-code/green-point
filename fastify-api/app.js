@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+const fs = require('node:fs');
 import Redis from 'ioredis';
 import cors from '@fastify/cors';
 import { promptController } from './controllers/promptController.js';
