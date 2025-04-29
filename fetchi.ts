@@ -13,7 +13,7 @@ const fs = require('node:fs');
     },
     body: JSON.stringify({
         model: "deepseek-r1",
-        prompt: `${systempromt}, according to these guidelines respond to this message: ${userpromt}`,
+        prompt: `${systempromt}, according to these guidelines respond to this message: ${userpromt} in the format: { is_ecofriendly: true or false, response: "your response" }`,
         stream: false,
         options: {
             seed: 42,
@@ -39,7 +39,6 @@ const fs = require('node:fs');
     })
 
     jsonrep = await response.json()
-    console.log(jsonrep)
     textrep = jsonrep.response
     donereson = jsonrep.done_reason
     if (donereson == "lenght") {
