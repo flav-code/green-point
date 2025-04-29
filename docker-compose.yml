@@ -1,0 +1,14 @@
+services:
+  react-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3000:4173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm run preview
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6380:6379"
