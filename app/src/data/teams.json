@@ -1,0 +1,42 @@
+[
+  {
+    "id": "team-1",
+    "name": "EcoCoders",
+    "color": "#22c55e",
+    "score": 1250,
+    "memberCount": 12,
+    "logo": "leaf"
+  },
+  {
+    "id": "team-2",
+    "name": "SustainTech",
+    "color": "#0ea5e9",
+    "score": 980,
+    "memberCount": 10,
+    "logo": "droplets"
+  },
+  {
+    "id": "team-3",
+    "name": "GreenBytes",
+    "color": "#a855f7",
+    "score": 1420,
+    "memberCount": 14,
+    "logo": "cpu"
+  },
+  {
+    "id": "team-4",
+    "name": "EarthPrompt",
+    "color": "#f97316",
+    "score": 890,
+    "memberCount": 8,
+    "logo": "globe"
+  },
+  {
+    "id": "team-5",
+    "name": "DataSavers",
+    "color": "#ec4899", 
+    "score": 1050,
+    "memberCount": 11,
+    "logo": "save"
+  }
+]

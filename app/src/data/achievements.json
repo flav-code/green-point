@@ -1,0 +1,48 @@
+[
+  {
+    "id": "first-prompt",
+    "title": "First Steps",
+    "description": "Submit your first prompt to the AI",
+    "icon": "message-square"
+  },
+  {
+    "id": "efficiency-streak",
+    "title": "Efficiency Guru",
+    "description": "Achieve 5 high-efficiency prompts in a row",
+    "icon": "zap",
+    "progress": 0,
+    "maxProgress": 5
+  },
+  {
+    "id": "power-saver",
+    "title": "Power Saver",
+    "description": "Reduce average energy consumption by 20%",
+    "icon": "battery-charging",
+    "progress": 0,
+    "maxProgress": 100
+  },
+  {
+    "id": "prompt-master",
+    "title": "Prompt Master",
+    "description": "Submit 50 prompts to the AI",
+    "icon": "award",
+    "progress": 0,
+    "maxProgress": 50
+  },
+  {
+    "id": "team-contributor",
+    "title": "Team Player",
+    "description": "Contribute 100 points to your team",
+    "icon": "users",
+    "progress": 0,
+    "maxProgress": 100
+  },
+  {
+    "id": "optimization-expert",
+    "title": "Optimization Expert",
+    "description": "Improve 10 inefficient prompts based on suggestions",
+    "icon": "sparkles",
+    "progress": 0,
+    "maxProgress": 10
+  }
+]
