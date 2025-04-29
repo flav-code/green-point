@@ -14,14 +14,27 @@ const UserOnboarding: React.FC<UserOnboardingProps> = ({ onComplete }) => {
   const [name, setName] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
   const [step, setStep] = useState(1);
-  
+
+  // Add this function to join a team (increment member count)
+  const joinTeam = async (teamId: string) => {
+    try {
+      await fetch('http://127.0.0.1:4000/member/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: teamId })
+      });
+    } catch (e) {
+      // Optionally handle error
+    }
+  };
+
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim().length >= 2) {
       setStep(2);
     }
   };
-  
+
   const handleTeamSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTeam) {
@@ -29,7 +42,7 @@ const UserOnboarding: React.FC<UserOnboardingProps> = ({ onComplete }) => {
       onComplete();
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -40,7 +53,7 @@ const UserOnboarding: React.FC<UserOnboardingProps> = ({ onComplete }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="max-w-md mx-auto">
       <CardContainer 
@@ -124,6 +137,9 @@ const UserOnboarding: React.FC<UserOnboardingProps> = ({ onComplete }) => {
                 type="submit"
                 className="flex-1 py-2 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md transition-colors"
                 disabled={!selectedTeam}
+                onClick={() => {
+                 joinTeam(selectedTeam);
+                }}
               >
                 Join Team
               </button>
