@@ -3,21 +3,24 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:3000:4173"
+    # ports:
+    #   - "127.0.0.1:3000:4173"
     environment:
       - CHOKIDAR_USEPOLLING=true
     command: npm run preview
+    network_mode: host
   redis:
     image: redis:7-alpine
-    ports:
-      - "127.0.0.1:6380:6379"
+    # ports:
+    #   - "127.0.0.1:6380:6379"
+    network_mode: host
   fastify-api:
     build:
       context: ./fastify-api
       dockerfile: Dockerfile
-    ports:
-      - "127.0.0.1:4000:4000"
+    # ports:
+    #   - "127.0.0.1:4000:4000"
     command: npm run start
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://127.0.0.1:6379
+    network_mode: host
