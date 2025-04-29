@@ -17,6 +17,7 @@ export interface UserStats {
   averageEnergy: number;
   dailyPrompts: Record<string, number>;
   dailyEnergy: Record<string, number>;
+  ecoResponsibleStreak?: number; // Track eco-responsible prompts streak
 }
 
 export interface Team {
@@ -51,4 +52,15 @@ export interface EnergyMetrics {
   usage: number;
   efficiency: 'high' | 'medium' | 'low';
   suggestions?: string[];
+}
+
+export interface PromptValidationStatus {
+  status: 'idle' | 'valid' | 'warning' | 'error';
+  message: string;
+}
+
+export interface SendMessageOptions {
+  overrideResponse?: string;
+  efficiency?: 'high' | 'medium' | 'low';
+  usage?: number;
 }

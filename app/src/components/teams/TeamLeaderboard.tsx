@@ -1,16 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, Users } from 'lucide-react';
 import { useTeams } from '../../hooks/useTeams';
 import { useUser } from '../../hooks/useUser';
 import CardContainer from '../layout/CardContainer';
 
 const TeamLeaderboard: React.FC = () => {
-  const { getSortedTeams, isLoading } = useTeams();
+  const { teams } = useTeams();
   const { user } = useUser();
-  
-  const sortedTeams = getSortedTeams();
-  
-  if (isLoading) {
+
+  if (!teams.length) {
     return (
       <CardContainer title="Team Leaderboard" icon={<Trophy className="w-5 h-5 text-yellow-500" />}>
         <div className="h-[200px] flex items-center justify-center">
@@ -19,13 +17,13 @@ const TeamLeaderboard: React.FC = () => {
       </CardContainer>
     );
   }
-  
+
   return (
     <CardContainer title="Team Leaderboard" icon={<Trophy className="w-5 h-5 text-yellow-500" />}>
       <div className="space-y-3">
-        {sortedTeams.map((team, index) => {
+        {teams.map((team, index) => {
           const isUserTeam = user?.teamId === team.id;
-          
+
           return (
             <div 
               key={team.id} 

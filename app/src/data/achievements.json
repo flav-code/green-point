@@ -44,5 +44,29 @@
     "icon": "sparkles",
     "progress": 0,
     "maxProgress": 10
+  },
+  {
+    "id": "first-eco-prompt",
+    "title": "First Eco-Responsible Prompt",
+    "description": "Submit your first eco-responsible prompt",
+    "icon": "leaf",
+    "progress": 0,
+    "maxProgress": 1
+  },
+  {
+    "id": "eco-streak-5",
+    "title": "Eco Streak: Beginner",
+    "description": "Submit 5 eco-responsible prompts in a row",
+    "icon": "award",
+    "progress": 0,
+    "maxProgress": 5
+  },
+  {
+    "id": "eco-streak-20",
+    "title": "Eco Streak: Master",
+    "description": "Submit 20 eco-responsible prompts in a row",
+    "icon": "award",
+    "progress": 0,
+    "maxProgress": 20
   }
 ]
