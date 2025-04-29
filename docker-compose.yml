@@ -12,3 +12,12 @@ services:
     image: redis:7-alpine
     ports:
       - "127.0.0.1:6380:6379"
+  fastify-api:
+    build:
+      context: ./fastify-api
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:4000:4000"
+    command: npm run start
+    environment:
+      - REDIS_URL=redis://redis:6379

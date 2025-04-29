@@ -1,0 +1,13 @@
+{
+  "name": "fastify-api",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "fastify": "^4.0.0",
+    "ioredis": "^5.6.1"
+  }
+}
