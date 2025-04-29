@@ -115,18 +115,20 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({ user: initialUser }) => {
     return () => clearInterval(intervalId);
   }, [updateUserAndChartData]);
 
-  // Add event listener for custom events
+  // Add event listener for updates
   useEffect(() => {
     const handleUserUpdate = () => {
       console.log("Analytics: User update event received");
       updateUserAndChartData();
     };
 
-    // Listen for a custom event that will be dispatched when user data changes
+    // Listen for various update events
     window.addEventListener('user-data-updated', handleUserUpdate);
+    window.addEventListener('user-stats-updated', handleUserUpdate);
 
     return () => {
       window.removeEventListener('user-data-updated', handleUserUpdate);
+      window.removeEventListener('user-stats-updated', handleUserUpdate);
     };
   }, [updateUserAndChartData]);
 

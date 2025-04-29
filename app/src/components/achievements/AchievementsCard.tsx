@@ -1,13 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Award, Star, TrendingUp, CircleOff, Leaf } from 'lucide-react';
 import { User } from '../../types';
 import CardContainer from '../layout/CardContainer';
+import { getUser } from '../../utils/localStorage';
 
 interface AchievementsCardProps {
   user: User;
 }
 
-const AchievementsCard: React.FC<AchievementsCardProps> = ({ user }) => {
+const AchievementsCard: React.FC<AchievementsCardProps> = ({ user: initialUser }) => {
+  const [user, setUser] = useState<User>(initialUser);
+  const [flashAchievement, setFlashAchievement] = useState<string | null>(null);
+
+  // Listen for achievement unlocks
+  useEffect(() => {
+    const handleAchievementUnlocked = (event: Event) => {
+      const customEvent = event as CustomEvent<{ achievementId: string }>;
+      console.log("Achievement unlocked:", customEvent.detail);
+
+      // Flash the newly unlocked achievement
+      setFlashAchievement(customEvent.detail.achievementId);
+
+      // Clear the flash after 3 seconds
+      setTimeout(() => {
+        setFlashAchievement(null);
+      }, 3000);
+
+      // Refresh user data
+      const updatedUser = getUser();
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+    };
+
+    // Listen for achievements and general updates
+    window.addEventListener('achievement-unlocked', handleAchievementUnlocked);
+    window.addEventListener('user-data-updated', () => {
+      const updatedUser = getUser();
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('achievement-unlocked', handleAchievementUnlocked);
+      window.removeEventListener('user-data-updated', () => {});
+    };
+  }, []);
+
   // Determine which achievements to show (unlocked ones first, then in-progress ones)
   const achievements = [...user.achievements].sort((a, b) => {
     // Unlocked achievements at the top
@@ -64,7 +104,7 @@ const AchievementsCard: React.FC<AchievementsCardProps> = ({ user }) => {
 
           <div className="mt-2 bg-background-darker rounded-full h-2">
             <div
-                className="h-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500"
+                className="h-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-500 transition-all duration-500"
                 style={{ width: `${levelProgressPercentage}%` }}
             ></div>
           </div>
@@ -103,11 +143,20 @@ const AchievementsCard: React.FC<AchievementsCardProps> = ({ user }) => {
                 const progressPercentage = achievement.progress && achievement.maxProgress
                     ? (achievement.progress / achievement.maxProgress) * 100
                     : 0;
+                const isFlashing = flashAchievement === achievement.id;
 
                 return (
                     <div
                         key={achievement.id}
-                        className={`p-2 rounded-md ${isUnlocked ? 'bg-primary-900/20' : 'bg-background-darker'}`}
+                        className={`p-2 rounded-md ${
+                            isUnlocked
+                                ? 'bg-primary-900/20'
+                                : 'bg-background-darker'
+                        } ${
+                            isFlashing
+                                ? 'animate-pulse border border-yellow-500'
+                                : ''
+                        } transition-all duration-300`}
                     >
                       <div className="flex items-start">
                         <div className={`flex items-center justify-center rounded-md w-8 h-8 mr-3 ${
@@ -142,7 +191,7 @@ const AchievementsCard: React.FC<AchievementsCardProps> = ({ user }) => {
                                 </div>
                                 <div className="w-full bg-gray-800 rounded-full h-1">
                                   <div
-                                      className="h-1 rounded-full bg-secondary-700"
+                                      className="h-1 rounded-full bg-secondary-700 transition-all duration-500"
                                       style={{ width: `${progressPercentage}%` }}
                                   ></div>
                                 </div>

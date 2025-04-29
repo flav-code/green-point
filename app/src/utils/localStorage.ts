@@ -2,17 +2,12 @@ import { User, Team, Achievement, ChatMessage } from "../types";
 import teamsData from "../data/teams.json";
 import achievementsData from "../data/achievements.json";
 import { v4 as uuidv4 } from "uuid";
+import {dispatchUpdateEvent} from "../components/chat/updateService.ts";
 
 const USER_KEY = "greenpoint_user";
 const TEAMS_KEY = "greenpoint_teams";
 const MESSAGES_KEY = "greenpoint_messages";
 const ECO_STREAK_KEY = "greenpoint_eco_streak";
-
-// Helper function to dispatch event when user data changes
-const dispatchUserDataUpdated = () => {
-  const event = new Event('user-data-updated');
-  window.dispatchEvent(event);
-};
 
 // Initialize or get user data
 export const getUser = (): User | null => {
@@ -78,9 +73,8 @@ export const createUser = (name: string, teamId: string): User => {
   localStorage.setItem(ECO_STREAK_KEY, "0");
 
   localStorage.setItem(USER_KEY, JSON.stringify(newUser));
-
-  // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
+  // Dispatch event to notify of user creation
+  dispatchUpdateEvent('user-data-updated', { userId: newUser.id });
 
   return newUser;
 };
@@ -90,7 +84,7 @@ export const saveUser = (user: User): void => {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 
   // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
+  dispatchUpdateEvent('user-data-updated', { userId: user.id });
 };
 
 // Set user data (for external hooks)
@@ -113,14 +107,31 @@ export const getTeams = (): Team[] => {
 // Update team score
 export const updateTeamScore = (teamId: string, pointsToAdd: number): void => {
   const teams = getTeams();
-  const updatedTeams = teams.map(team => {
-    if (team.id === teamId) {
-      return { ...team, score: team.score + pointsToAdd };
-    }
-    return team;
-  });
+  const teamIndex = teams.findIndex(team => team.id === teamId);
 
-  localStorage.setItem(TEAMS_KEY, JSON.stringify(updatedTeams));
+  if (teamIndex === -1) {
+    console.error(`Team not found with id: ${teamId}`);
+    return;
+  }
+
+  const updatedTeam = { ...teams[teamIndex] };
+  updatedTeam.score += pointsToAdd;
+
+  // Ensure score doesn't go negative
+  if (updatedTeam.score < 0) updatedTeam.score = 0;
+
+  // Update the team in the array
+  teams[teamIndex] = updatedTeam;
+
+  // Save updated teams
+  localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
+
+  // Dispatch event for team score update
+  dispatchUpdateEvent('team-score-updated', {
+    teamId: teamId,
+    newScore: updatedTeam.score,
+    pointChange: pointsToAdd
+  });
 };
 
 // Get chat messages
@@ -217,9 +228,6 @@ export const updateEcoStreak = (increment: boolean): number => {
     saveUser(updatedUser);
   }
 
-  // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
-
   return newStreak;
 };
 
@@ -246,10 +254,12 @@ export const updateAchievement = (
 
   // Check if user already has this achievement
   const existingIndex = user.achievements.findIndex(a => a.id === achievementId);
+  let achievement: Achievement | null = null;
+  let wasUnlocked = false;
 
   if (existingIndex >= 0) {
     // Achievement exists, update progress
-    const achievement = { ...user.achievements[existingIndex] };
+    achievement = { ...user.achievements[existingIndex] };
 
     // Only update progress if it's not already unlocked
     if (!achievement.unlockedAt && achievement.progress !== undefined && achievement.maxProgress !== undefined) {
@@ -258,6 +268,7 @@ export const updateAchievement = (
       // Check if achievement should be unlocked
       if (forceUnlock || achievement.progress >= achievement.maxProgress) {
         achievement.unlockedAt = new Date().toISOString();
+        wasUnlocked = true;
 
         // Add XP for completing achievement
         user.xp += 50;
@@ -276,22 +287,19 @@ export const updateAchievement = (
 
       const updatedUser = { ...user, achievements: updatedAchievements };
       saveUser(updatedUser);
-
-      return achievement;
     }
-
-    return user.achievements[existingIndex];
   } else {
     // Achievement doesn't exist for user, add it
-    const newAchievement = { ...achievementTemplate };
+    achievement = { ...achievementTemplate };
 
     // If it has progress, update it
-    if (incrementProgress > 0 && newAchievement.progress !== undefined) {
-      newAchievement.progress = incrementProgress;
+    if (incrementProgress > 0 && achievement.progress !== undefined) {
+      achievement.progress = incrementProgress;
 
       // Check if it should be unlocked immediately
-      if (forceUnlock || (newAchievement.progress >= (newAchievement.maxProgress || 0))) {
-        newAchievement.unlockedAt = new Date().toISOString();
+      if (forceUnlock || (achievement.progress >= (achievement.maxProgress || 0))) {
+        achievement.unlockedAt = new Date().toISOString();
+        wasUnlocked = true;
 
         // Add XP for completing achievement
         user.xp += 50;
@@ -304,7 +312,8 @@ export const updateAchievement = (
         }
       }
     } else if (forceUnlock) {
-      newAchievement.unlockedAt = new Date().toISOString();
+      achievement.unlockedAt = new Date().toISOString();
+      wasUnlocked = true;
 
       // Add XP for completing achievement
       user.xp += 50;
@@ -320,12 +329,21 @@ export const updateAchievement = (
     // Add to user's achievements
     const updatedUser = {
       ...user,
-      achievements: [...user.achievements, newAchievement]
+      achievements: [...user.achievements, achievement]
     };
 
     saveUser(updatedUser);
-    return newAchievement;
   }
+
+  // If achievement was unlocked, dispatch an event
+  if (wasUnlocked && achievement) {
+    dispatchUpdateEvent('achievement-unlocked', {
+      achievementId: achievement.id,
+      achievementName: achievement.title
+    });
+  }
+
+  return achievement;
 };
 
 // Update eco-responsible achievements based on the current streak
@@ -343,18 +361,15 @@ export const updateEcoAchievements = (streak: number): void => {
   if (streak <= 20) {
     updateAchievement("eco-streak-20", 1);
   }
-
-  // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
 };
 
 // Update user stats with new prompt information
 export const updateUserStats = (
     energyUsage: number,
     efficiency: 'high' | 'medium' | 'low'
-): void => {
+): Record<string, any> => {
   const user = getUser();
-  if (!user) return;
+  if (!user) return {};
 
   const today = new Date().toISOString().split('T')[0];
   const isEfficient = efficiency === 'high';
@@ -408,8 +423,7 @@ export const updateUserStats = (
     updateEcoAchievements(newStreak);
   }
 
-  // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
+  return updatedStats;
 };
 
 // Add XP directly to user
@@ -434,9 +448,6 @@ export const addUserXP = (xpAmount: number): boolean => {
   }
 
   saveUser(user);
-
-  // Dispatch event to notify of user update
-  dispatchUserDataUpdated();
 
   return didLevelUp;
 };

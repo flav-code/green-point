@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Zap, AlertTriangle, CheckCircle, BarChart3, RefreshCw } from 'lucide-react';
 import { useChat } from '../../hooks/useChat';
 import { useUser } from '../../hooks/useUser';
+import { useTeams } from '../../hooks/useTeams';
 import ChatMessage from './ChatMessage';
 import ChatFeedback from './ChatFeedback';
 import PromptStatusIndicator from './PromptStatusIndicator';
@@ -12,7 +13,8 @@ import {
   getShortPromptMessage,
   getPolitenessFormulaMessage
 } from './chatValidation';
-import { updateEcoStreak } from '../../utils/localStorage';
+import { updateEcoStreak, updateUserStats, getUser } from '../../utils/localStorage';
+import { dispatchUpdateEvent } from './updateService';
 import './ChatContainer.css';
 
 interface ChatContainerProps {
@@ -22,6 +24,7 @@ interface ChatContainerProps {
 const ChatContainer: React.FC<ChatContainerProps> = ({ className = '' }) => {
   const { messages, isLoading, currentMetrics, sendMessage, resetChat } = useChat();
   const { user, checkAchievements, refreshUser } = useUser();
+  const { refreshTeams, addTeamPoints } = useTeams();
   const [prompt, setPrompt] = useState('');
   const [promptStatus, setPromptStatus] = useState<PromptValidationStatus>({
     status: 'idle',
@@ -64,14 +67,50 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ className = '' }) => {
       // Reset the eco-streak
       updateEcoStreak(false);
 
-      // Refresh user data
+      // Refresh user data and teams
       refreshUser();
+      refreshTeams();
+
+      // Force update notifications
+      dispatchUpdateEvent('user-data-updated', { timestamp: Date.now() });
 
       // Focus on input after reset
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
+  };
+
+  // Centralized function to process all updates after a response
+  const processResponseUpdates = (isEcoResponsible: boolean, metrics: any) => {
+    console.log("Processing response updates - eco-responsible:", isEcoResponsible);
+
+    // 1. First directly update user stats
+    const updatedStats = updateUserStats(metrics.usage, metrics.efficiency === 'high' ? 'high' : 'low');
+    console.log("Updated user stats:", updatedStats);
+
+    // 2. Check achievements
+    checkAchievements({
+      promptSubmitted: true,
+      efficientPrompt: isEcoResponsible,
+      ecoResponsiblePrompt: isEcoResponsible,
+      resetEcoStreak: !isEcoResponsible
+    });
+
+    // 3. Directly update team points if the API call failed
+    const currentUser = getUser();
+    if (currentUser) {
+      const pointChange = isEcoResponsible ? 10 : -10;
+      console.log(`Adding ${pointChange} points to team ${currentUser.teamId}`);
+      addTeamPoints(currentUser.teamId, pointChange);
+    }
+
+    // 4. Force UI updates
+    refreshUser();
+    refreshTeams();
+
+    // 5. Broadcast updates to all components
+    dispatchUpdateEvent('user-data-updated', { timestamp: Date.now() });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,13 +133,8 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ className = '' }) => {
 
       setPrompt('');
 
-      // Track as inefficient prompt
-      checkAchievements({
-        promptSubmitted: true,
-        efficientPrompt: false,
-        resetEcoStreak: true
-      });
-
+      // Process all updates in one centralized place
+      processResponseUpdates(false, { usage: 95, efficiency: 'low' });
       return;
     }
 
@@ -117,13 +151,8 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ className = '' }) => {
 
       setPrompt('');
 
-      // Track as inefficient prompt
-      checkAchievements({
-        promptSubmitted: true,
-        efficientPrompt: false,
-        resetEcoStreak: true
-      });
-
+      // Process all updates in one centralized place
+      processResponseUpdates(false, { usage: 85, efficiency: 'low' });
       return;
     }
 
@@ -131,19 +160,21 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ className = '' }) => {
     const submittedPrompt = prompt;
     setPrompt('');
 
+    console.log("Sending prompt to API:", submittedPrompt);
     const result = await sendMessage(submittedPrompt);
+    console.log("API response:", result);
 
     if (result?.success) {
       // Determine if this was an eco-responsible prompt based on the metrics
-      const isEcoResponsible = result.metrics.efficiency === 'high';
+      // Check if isEcoResponsible was directly returned, otherwise use the efficiency
+      const isEcoResponsible = 'isEcoResponsible' in result
+          ? result.isEcoResponsible
+          : result.metrics.efficiency === 'high';
 
-      // Check for achievements
-      checkAchievements({
-        promptSubmitted: true,
-        efficientPrompt: isEcoResponsible,
-        ecoResponsiblePrompt: isEcoResponsible,
-        resetEcoStreak: !isEcoResponsible
-      });
+      console.log("Prompt eco-responsible:", isEcoResponsible);
+
+      // Process all updates in one centralized place
+      processResponseUpdates(isEcoResponsible, result.metrics);
     }
   };
 

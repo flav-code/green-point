@@ -19,24 +19,24 @@
     "id": "team-3",
     "name": "GreenBytes",
     "color": "#a855f7",
-    "score": 1420,
-    "memberCount": 14,
+    "score": 0,
+    "memberCount": 0,
     "logo": "cpu"
   },
   {
     "id": "team-4",
     "name": "EarthPrompt",
     "color": "#f97316",
-    "score": 890,
-    "memberCount": 8,
+    "score": 0,
+    "memberCount": 0,
     "logo": "globe"
   },
   {
     "id": "team-5",
     "name": "DataSavers",
     "color": "#ec4899", 
-    "score": 1050,
-    "memberCount": 11,
+    "score": 0,
+    "memberCount": 0,
     "logo": "save"
   }
 ]
